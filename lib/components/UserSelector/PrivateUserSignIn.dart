@@ -1,9 +1,12 @@
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:na0826/widgets/responsive_safe_area.dart';
 import 'package:na0826/widgets/loading_dialog.dart';
 import 'package:na0826/core/usecases/usecase.dart';
 import 'package:na0826/core/constants/keys.dart';
+import '../injection/injection_container.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'loginHelper.dart';
 
 
@@ -38,6 +41,20 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
     super.initState();
   }
 
+
+  Future<String?> _scanQR() async {
+    try {
+      final barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+          "#ff6666", "cancel".tr, true, ScanMode.DEFAULT);
+      if (barcodeScanRes.isNotEmpty && barcodeScanRes != '-1') {
+        return barcodeScanRes;
+      }
+      return null;
+    } on PlatformException {
+      logger.e('Failed to get platform version.');
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,11 +102,21 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
                                     controller: _baseUrlController,
                                     keyboardType: TextInputType.url,
                                     autocorrect: false,
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       labelText: "Server Name",
                                       // labelText: "Base URL",
                                       hintText: "https://domain.com",
-                                      border: OutlineInputBorder(),
+                                      border: const OutlineInputBorder(),
+                                      suffixIcon: IconButton(
+                                        icon: Image.asset('assets/icon/QR_Icon.png'),
+                                        onPressed: () async {
+                                          String? val = await _scanQR();
+                                          if (val != null) {
+                                            _baseUrlController.text = val
+                                                .replaceAll('Server Name: ', '');
+                                          }
+                                        },
+                                      ),
                                     ),
                                     textInputAction: TextInputAction.next,
                                     onEditingComplete: () => node.nextFocus(),
@@ -137,9 +164,22 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
                                           controller: _usernameController,
                                           keyboardType: TextInputType.visiblePassword,
                                           autofillHints: const [AutofillHints.username],
-                                          decoration: const InputDecoration(
-                                            border: OutlineInputBorder(),
+                                          decoration: InputDecoration(
+                                            border: const OutlineInputBorder(),
                                             labelText: "Username",
+                                            suffixIcon: IconButton(
+                                              icon: Image.asset('assets/icon/QR_Icon.png'),
+                                              onPressed: () async {
+                                                String? val = await _scanQR();
+                                                if (val != null) {
+                                                  final startIndex = val.indexOf('\n');
+                                                  final user = val.substring(0, startIndex);
+                                                  final pass = val.substring(startIndex, val.length);
+                                                  _usernameController.text = user.replaceAll('Username: ', '');
+                                                  _passwordController.text = pass.replaceAll('Password: ', '');
+                                                }
+                                              },
+                                            ),
                                           ),
                                           textInputAction: TextInputAction.next,
                                           onEditingComplete: () => node.nextFocus(),
