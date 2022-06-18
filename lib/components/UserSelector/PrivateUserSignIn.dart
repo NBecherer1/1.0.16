@@ -1,4 +1,5 @@
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:na0826/widgets/responsive_safe_area.dart';
 import 'package:na0826/widgets/loading_dialog.dart';
 import 'package:na0826/core/usecases/usecase.dart';
@@ -38,6 +39,7 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
     _usernameController.text = _username??'';
     _passwordController.text = _password??'';
     _remember = hasRemember??true;
+    _askForPermissions();
     super.initState();
   }
 
@@ -56,11 +58,24 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
     }
   }
 
+  Future<void> _askForPermissions() async {
+    var cameraStatus = await Permission.camera.status;
+    var storageStatus = await Permission.storage.status;
+    var notificationStatus = await Permission.notification.status;
+    if (cameraStatus.isDenied ||
+        storageStatus.isDenied ||
+        notificationStatus.isDenied) {
+      await [
+        Permission.camera,
+        Permission.storage,
+        Permission.notification,
+      ].request();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    // This variable is for handling shifting focus when the user presses submit.
-    // https://stackoverflow.com/questions/52150677/how-to-shift-focus-to-next-textfield-in-flutter
     final node = FocusScope.of(context);
     return ResponsiveSafeArea(
         builder: (BuildContext context) {
