@@ -1,4 +1,5 @@
 import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:lottie/lottie.dart';
 import '../../services/DownloadUpdateStream.dart';
 import '../../components/errorSnackbar.dart';
 import '../../services/DownloadsHelper.dart';
@@ -86,7 +87,7 @@ class _DownloadedIndicatorState extends State<DownloadedIndicator> {
               // }
               if (_currentStatus == null) {
                 return IconButton(
-                  icon: const Icon(Icons.downloading, color: Color(0xFF00A4DC)),
+                  icon: const Icon(Icons.downloading, color: Colors.grey),
                   onPressed: () {
                     _downloadsHelper.addDownloadedItem(widget.item);
                   },
@@ -118,9 +119,12 @@ class _DownloadedIndicatorState extends State<DownloadedIndicator> {
                 );
               } else if (_currentStatus == DownloadTaskStatus.enqueued ||
                   _currentStatus == DownloadTaskStatus.running) {
-                return Icon(
-                  Icons.download_outlined,
-                  color: Colors.white.withOpacity(0.5),
+                return Padding(
+                  padding: const EdgeInsets.only(right: 5),
+                  child: Lottie.asset(
+                    'assets/icon/download.json',
+                    width: 35, height: 35
+                  ),
                 );
               } else {
                 return const SizedBox(width: 0, height: 0);
