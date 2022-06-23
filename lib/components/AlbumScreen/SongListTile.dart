@@ -82,7 +82,7 @@ class _SongListTileState extends State<SongListTile> {
                     && !widget.isSong
                     && mutableItem.albumId == widget.parentId)
                   TextSpan(
-                    text: mutableItem.indexNumber.toString() + ". ",
+                    text: "${mutableItem.indexNumber}. ",
                     style: TextStyle(
                       color: Theme.of(context).disabledColor,
                     )
@@ -114,6 +114,7 @@ class _SongListTileState extends State<SongListTile> {
               ),
             )),
       trailing: DownloadedIndicator(item: mutableItem),
+      // trailing: DownloadedIndicator(item: mutableItem),
       onTap: () {
         // TODO: 2
         _audioServiceHelper.replaceQueueWithItem(

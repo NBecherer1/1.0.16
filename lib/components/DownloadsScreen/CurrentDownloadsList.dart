@@ -53,8 +53,7 @@ class _CurrentDownloadsListState extends State<CurrentDownloadsList> {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return SliverList(
-            delegate:
-                SliverChildBuilderDelegate((BuildContext context, int index) {
+            delegate: SliverChildBuilderDelegate((BuildContext context, int index) {
               return Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: CurrentDownloadListTile(
@@ -85,9 +84,7 @@ class CurrentDownloadListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     DownloadsHelper downloadsHelper = GetIt.instance<DownloadsHelper>();
-    DownloadedSong? item =
-        downloadsHelper.getJellyfinItemFromDownloadId(downloadTask.taskId);
-
+    DownloadedSong? item = downloadsHelper.getJellyfinItemFromDownloadId(downloadTask.taskId);
     return Stack(
       alignment: Alignment.bottomCenter,
       children: [

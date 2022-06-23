@@ -66,9 +66,7 @@ class _ArtistDownloadButtonState extends State<ArtistDownloadButton> {
             future: _artistDownloadButtonFuture,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
-                final undownloadedAlbums =
-                    _getUndownloadedAlbums(snapshot.data!);
-
+                final undownloadedAlbums = _getUndownloadedAlbums(snapshot.data!);
                 return IconButton(
                   icon: undownloadedAlbums.isEmpty
                       ? const Icon(Icons.delete)
@@ -85,8 +83,7 @@ class _ArtistDownloadButtonState extends State<ArtistDownloadButton> {
                               deletedFor: e.id));
                       Future.wait(deleteFutures).then((_) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text("Downloads deleted.")));
+                            const SnackBar(content: Text("Downloads deleted.")));
                       },
                           onError: (error, stackTrace) =>
                               errorSnackbar(error, context));

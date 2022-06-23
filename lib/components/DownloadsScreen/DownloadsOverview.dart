@@ -20,7 +20,7 @@ class _DownloadsOverviewState extends State<DownloadsOverview> {
 
   Map<String, DownloadTaskStatus>? _downloadTaskStatuses;
 
-  Map<DownloadTaskStatus, int> _downloadCount = {
+  final Map<DownloadTaskStatus, int> _downloadCount = {
     DownloadTaskStatus.undefined: 0,
     DownloadTaskStatus.enqueued: 0,
     DownloadTaskStatus.running: 0,
@@ -59,14 +59,12 @@ class _DownloadsOverviewState extends State<DownloadsOverview> {
       future: _downloadsOverviewFuture,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          if (_downloadTaskStatuses == null) {
-            _downloadTaskStatuses = Map.fromEntries(
+          _downloadTaskStatuses ??= Map.fromEntries(
                 snapshot.data!.map((e) => MapEntry(e.taskId, e.status)));
-          }
 
           if (!_initialCountDone) {
             // Switch cases don't work for some reason
-            snapshot.data!.forEach((element) {
+            for (var element in snapshot.data!) {
               if (element.status == DownloadTaskStatus.undefined) {
                 _downloadCount[DownloadTaskStatus.undefined] =
                     _downloadCount[DownloadTaskStatus.undefined]! + 1;
@@ -89,7 +87,7 @@ class _DownloadsOverviewState extends State<DownloadsOverview> {
                 _downloadCount[DownloadTaskStatus.paused] =
                     _downloadCount[DownloadTaskStatus.paused]! + 1;
               }
-            });
+            }
             _initialCountDone = true;
           }
 

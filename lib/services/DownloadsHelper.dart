@@ -5,9 +5,11 @@ import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:logging/logging.dart';
 
+import '../components/injection/injection_container.dart';
 import 'JellyfinApiData.dart';
 import '../models/JellyfinModels.dart';
 
@@ -15,10 +17,10 @@ part 'DownloadsHelper.g.dart';
 
 class DownloadsHelper {
   List<String> queue = [];
-  JellyfinApiData _jellyfinApiData = GetIt.instance<JellyfinApiData>();
-  Box<DownloadedSong> _downloadedItemsBox = Hive.box("DownloadedItems");
-  Box<DownloadedParent> _downloadedParentsBox = Hive.box("DownloadedParents");
-  Box<DownloadedSong> _downloadIdsBox = Hive.box("DownloadIds");
+  final JellyfinApiData _jellyfinApiData = GetIt.instance<JellyfinApiData>();
+  final Box<DownloadedSong> _downloadedItemsBox = Hive.box("DownloadedItems");
+  final Box<DownloadedParent> _downloadedParentsBox = Hive.box("DownloadedParents");
+  final Box<DownloadedSong> _downloadIdsBox = Hive.box("DownloadIds");
   final downloadsLogger = Logger("DownloadsHelper");
 
   Future<void> addDownloads({
@@ -44,20 +46,18 @@ class DownloadsHelper {
     try {
       if (!_downloadedParentsBox.containsKey(parent.id)) {
         // If the current album doesn't exist, add the album to the box of albums
-        downloadsLogger.info(
-            "Album ${parent.name} (${parent.id}) not in albums box, adding now.");
+        downloadsLogger.info("Album ${parent.name} (${parent.id}) not in albums box, adding now.");
         await _downloadedParentsBox.put(
-            parent.id,
-            DownloadedParent(
-                item: parent, downloadedChildren: {}, viewId: viewId));
+          parent.id, DownloadedParent(
+            item: parent, downloadedChildren: {}, viewId: viewId),
+        );
       }
 
       for (final item in items) {
         if (_downloadedItemsBox.containsKey(item.id)) {
           // If the item already exists, add the parent item to its requiredBy field and skip actually downloading the song.
           // We also add the item to the downloadedChildren of the parent that we're downloading.
-          downloadsLogger.info(
-              "Item ${item.id} already exists in downloadedItemsBox, adding requiredBy to DownloadedItem and adding to ${parent.id}'s downloadedChildren");
+          downloadsLogger.info("Item ${item.id} already exists in downloadedItemsBox, adding requiredBy to DownloadedItem and adding to ${parent.id}'s downloadedChildren");
 
           // This is technically nullable but we check if it contains the key
           // in order to get to this point.
@@ -71,8 +71,7 @@ class DownloadsHelper {
 
         // Base URL shouldn't be null at this point (user has to be logged in
         // to get to the point where they can add downloads).
-        String songUrl =
-            _jellyfinApiData.currentUser!.baseUrl + "/Items/${item.id}/File";
+        String songUrl = "${_jellyfinApiData.currentUser!.baseUrl}/Items/${item.id}/File";
 
         List<MediaSourceInfo>? mediaSourceInfo =
             await _jellyfinApiData.getPlaybackInfo(item.id);
@@ -85,16 +84,14 @@ class DownloadsHelper {
                 "Media source info for ${item.id} returned null, filename may be weird.");
           }
           // We use a regex to filter out bad characters from song/album names.
-          fileName =
-              "${item.album?.replaceAll(RegExp('[\/\?\<>\\:\*\|\"]'), "_")} - ${item.indexNumber ?? 0} - ${item.name?.replaceAll(RegExp('[\/\?\<>\\:\*\|\"]'), "_")}.${mediaSourceInfo?[0].container}";
-          downloadDir =
-              Directory(downloadBaseDir.path + "/${item.albumArtist}");
+          fileName = "${item.album?.replaceAll(RegExp('[\/\?\<>\\:\*\|\"]'), "_")} - ${item.indexNumber ?? 0} - ${item.name?.replaceAll(RegExp('[\/\?\<>\\:\*\|\"]'), "_")}.${mediaSourceInfo?[0].container}";
+          downloadDir = Directory("${downloadBaseDir.path}/${item.albumArtist}");
 
           if (!await downloadDir.exists()) {
             await downloadDir.create();
           }
         } else {
-          fileName = item.id + ".${mediaSourceInfo?[0].container}";
+          fileName = "${item.id}.${mediaSourceInfo?[0].container}";
           downloadDir = Directory(downloadBaseDir.path);
         }
 
@@ -142,6 +139,185 @@ class DownloadsHelper {
     }
   }
 
+  Future<void> addDownloadedItem(BaseItemDto parent) async {
+    try {
+      await _downloadedParentsBox.put(
+        parent.id, DownloadedParent(
+        item: parent, downloadedChildren: {},
+        viewId: _jellyfinApiData.currentUser!.currentViewId!),
+      );
+
+      if (_downloadedItemsBox.containsKey(parent.id)) {
+        // If the item already exists, add the parent item to its requiredBy field and skip actually downloading the song.
+        // We also add the item to the downloadedChildren of the parent that we're downloading.
+        downloadsLogger.info("Item ${parent.id} already exists in downloadedItemsBox, adding requiredBy to DownloadedItem and adding to ${parent.id}'s downloadedChildren");
+
+        // This is technically nullable but we check if it contains the key
+        // in order to get to this point.
+        DownloadedSong itemFromBox = _downloadedItemsBox.get(parent.id)!;
+
+        itemFromBox.requiredBy.add(parent.id);
+        addDownloadedSong(itemFromBox);
+        _addItemToDownloadedAlbum(parent.id, parent);
+      }
+
+      // Base URL shouldn't be null at this point (user has to be logged in
+      // to get to the point where they can add downloads).
+      String songUrl = "${_jellyfinApiData.currentUser!.baseUrl}/Items/${parent.id}/File";
+
+      List<MediaSourceInfo>? mediaSourceInfo =
+      await _jellyfinApiData.getPlaybackInfo(parent.id);
+
+      Directory appDocDir = await getApplicationDocumentsDirectory();
+
+      bool useHumanReadableNames = false;
+
+      String fileName;
+      Directory downloadDir;
+      if (useHumanReadableNames) {
+        if (mediaSourceInfo == null) {
+          downloadsLogger.warning("Media source info for ${parent.id} returned null, filename may be weird.");
+        }
+        // We use a regex to filter out bad characters from song/album names.
+        fileName = "${parent.album?.replaceAll(RegExp('[\/\?\<>\\:\*\|\"]'), "_")} - ${parent.indexNumber ?? 0} - ${parent.name?.replaceAll(RegExp('[\/\?\<>\\:\*\|\"]'), "_")}.${mediaSourceInfo?[0].container}";
+        downloadDir =
+            Directory("${appDocDir.path}/${parent.albumArtist}");
+
+        if (!await downloadDir.exists()) {
+          await downloadDir.create();
+        }
+      } else {
+        fileName = "${parent.id}.${mediaSourceInfo?[0].container}";
+        downloadDir = Directory(appDocDir.path);
+      }
+
+      String? tokenHeader = _jellyfinApiData.getTokenHeader();
+
+      String? downloadId = await FlutterDownloader.enqueue(
+        url: songUrl,
+        savedDir: downloadDir.path,
+        headers: {
+          // "X-Emby-Authorization": await _jellyfinApiData.getAuthHeader(),
+          if (tokenHeader != null) "X-Emby-Token": tokenHeader,
+        },
+        fileName: fileName,
+        openFileFromNotification: false,
+        showNotification: false,
+      );
+
+      if (downloadId == null) {
+        downloadsLogger.severe("Adding download for ${parent.id} failed! downloadId is null. This only really happens if something goes horribly wrong with flutter_downloader's platform interface. This should never happen...");
+      }
+      DownloadedSong songInfo = DownloadedSong(
+        song: parent,
+        mediaSourceInfo: mediaSourceInfo![0],
+        downloadId: downloadId!,
+        requiredBy: [parent.id],
+        path: "${downloadDir.path}/$fileName",
+        useHumanReadableNames: useHumanReadableNames,
+        viewId: _jellyfinApiData.currentUser!.currentViewId!,
+      );
+
+      // Adds the current song to the downloaded items box with its media info and download id
+      await addDownloadedSong(songInfo);
+
+      // Adds the current song to the parent's DownloadedAlbum
+      await _addItemToDownloadedAlbum(parent.id, parent);
+
+      // Adds the download id and the item id to the download ids box so that we can track the download id back to the actual song
+
+      await _downloadIdsBox.put(downloadId, songInfo);
+
+      _addItemToDownloadedAlbum(parent.id, parent);
+    } catch(e) {
+      logger.e(e);
+    }
+  }
+
+  Future<void> deleteDownloadItem({
+    required String jellyfinItemId,
+    String? deletedFor,
+  }) async {
+    try {
+      List<Future> deleteDownloadFutures = [];
+      Map<String, Directory> directoriesToCheck = {};
+
+        DownloadedSong? downloadedSong = _downloadedItemsBox.get(jellyfinItemId);
+
+        if (downloadedSong == null) {
+          downloadsLogger.info(
+              "Could not find $jellyfinItemId in downloadedItemsBox, assuming already deleted");
+        } else {
+          if (deletedFor != null) {
+            downloadsLogger
+                .info("Removing $deletedFor dependency from $jellyfinItemId");
+            downloadedSong.requiredBy.remove(deletedFor);
+          }
+
+          if (downloadedSong.requiredBy.isEmpty || deletedFor == null) {
+            downloadsLogger.info(
+                "Item $jellyfinItemId has no dependencies or was manually deleted, deleting files");
+
+            downloadsLogger.info(
+                "Deleting ${downloadedSong.downloadId} from flutter_downloader");
+            deleteDownloadFutures.add(FlutterDownloader.remove(
+              taskId: downloadedSong.downloadId,
+              shouldDeleteContent: true,
+            ));
+
+            await _downloadedItemsBox.delete(jellyfinItemId);
+
+            await _downloadIdsBox.delete(downloadedSong.downloadId);
+
+            if (deletedFor != null) {
+              DownloadedParent? downloadedAlbumTemp =
+              _downloadedParentsBox.get(deletedFor);
+              if (downloadedAlbumTemp != null) {
+                downloadedAlbumTemp.downloadedChildren.remove(jellyfinItemId);
+                await _downloadedParentsBox.put(deletedFor, downloadedAlbumTemp);
+              }
+            }
+
+            // We only have to care about deleting directories if files are
+            // stored with human readable file names.
+            if (downloadedSong.useHumanReadableNames) {
+              // We use the parent here since downloadedSong.path still includes
+              // the filename. We assume that downloadedSong.path is not null,
+              // as if downloadedSong.useHumanReadableNames is true, the path
+              // would have been set at some point.
+              Directory songDirectory = Directory(downloadedSong.path).parent;
+
+              if (!directoriesToCheck.containsKey(songDirectory.path)) {
+                // Add the directory to the directory map.
+                // We keep the directories in a map so that we can easily check
+                // for duplicates.
+                directoriesToCheck[songDirectory.path] = songDirectory;
+              }
+            }
+          }
+        }
+
+
+      await Future.wait(deleteDownloadFutures);
+
+      for (var element in directoriesToCheck.values) {
+        if (await element.list().isEmpty) {
+          downloadsLogger.info("${element.path} is empty, deleting");
+          await element.delete();
+        }
+      }
+
+      if (deletedFor != null) {
+        await _downloadedParentsBox.delete(deletedFor);
+      }
+    } catch (e) {
+      logger.e(e);
+      downloadsLogger.severe(e);
+      return Future.error(e);
+    }
+  }
+
+
   /// Gets the download status for the given item ids (Jellyfin item id, not flutter_downloader task id).
   Future<List<DownloadTask>?> getDownloadStatus(List<String> itemIds) async {
     try {
@@ -179,8 +355,7 @@ class DownloadsHelper {
       Map<String, Directory> directoriesToCheck = {};
 
       for (final jellyfinItemId in jellyfinItemIds) {
-        DownloadedSong? downloadedSong =
-            _downloadedItemsBox.get(jellyfinItemId);
+        DownloadedSong? downloadedSong = _downloadedItemsBox.get(jellyfinItemId);
 
         if (downloadedSong == null) {
           downloadsLogger.info(
@@ -303,8 +478,7 @@ class DownloadsHelper {
       DownloadTaskStatus downloadTaskStatus) async {
     try {
       return await FlutterDownloader.loadTasksWithRawQuery(
-          query:
-              "SELECT * FROM task WHERE status = ${downloadTaskStatus.value}");
+          query: "SELECT * FROM task WHERE status = ${downloadTaskStatus.value}");
     } catch (e) {
       downloadsLogger.severe(e);
       return Future.error(e);
@@ -415,6 +589,7 @@ class DownloadsHelper {
         await _downloadedParentsBox.put(albumId, albumTemp);
       }
     } catch (e) {
+      logger.e(e);
       downloadsLogger.severe(e);
     }
   }

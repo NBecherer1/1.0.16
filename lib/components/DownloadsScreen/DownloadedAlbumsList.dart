@@ -13,21 +13,19 @@ class DownloadedAlbumsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final DownloadsHelper downloadsHelper = GetIt.instance<DownloadsHelper>();
-    final Iterable<DownloadedParent> downloadedParents =
-        downloadsHelper.downloadedParents;
-
-    // downloadedParents.sort((a, b) {
-    //   // This may not work, haven't tested it :)
-    //   if (a.item.name != null && b.item.name != null) {
-    //     return a.item.name!.compareTo(b.item.name!);
-    //   }
-    //   return 0;
-    // });
-
+    final Iterable<DownloadedParent> downloadedParents = downloadsHelper.downloadedParents;
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           DownloadedParent album = downloadedParents.elementAt(index);
+          // final song = album.downloadedChildren.values.first;
+          // return ListTile(
+          //   title: Text(song.name ?? "Unknown Name"),
+          //   leading: AlbumImage(item: song),
+          //   subtitle: ItemMediaSourceInfo(
+          //     songId: song.id,
+          //   ),
+          // );
           return ExpansionTile(
             key: PageStorageKey(album.item.id),
             leading: AlbumImage(item: album.item),

@@ -33,8 +33,7 @@ class _DownloadedIndicatorState extends State<DownloadedIndicator> {
   @override
   void initState() {
     super.initState();
-    _downloadedIndicatorFuture =
-        _downloadsHelper.getDownloadStatus([widget.item.id]);
+    _downloadedIndicatorFuture = _downloadsHelper.getDownloadStatus([widget.item.id]);
 
     // We do this instead of using a StreamBuilder because the StreamBuilder
     // kept dropping events. With this, we can also make it so that the widget
@@ -64,12 +63,9 @@ class _DownloadedIndicatorState extends State<DownloadedIndicator> {
           // widget.item.id is changed, so this should only rebuild when the
           // item is first downloaded and when it is deleted.
           return ValueListenableBuilder<Box<DownloadedSong>>(
-            valueListenable: _downloadsHelper
-                .getDownloadedItemsListenable(keys: [widget.item.id]),
+            valueListenable: _downloadsHelper.getDownloadedItemsListenable(keys: [widget.item.id]),
             builder: (context, box, _) {
-              print("valuelistenable rebuild");
               if (_downloadTaskId == null && box.get(widget.item.id) != null) {
-                print("making dl task");
                 _downloadTaskId = box.get(widget.item.id)!.downloadId;
               } else if (box.get(widget.item.id) == null) {
                 _downloadTaskId = null;
@@ -89,11 +85,25 @@ class _DownloadedIndicatorState extends State<DownloadedIndicator> {
               //   _currentStatus = snapshot.data?.status;
               // }
               if (_currentStatus == null) {
+                return IconButton(
+                  icon: const Icon(Icons.downloading, color: Color(0xFF00A4DC)),
+                  onPressed: () {
+                    _downloadsHelper.addDownloadedItem(widget.item);
+                  },
+                );
                 return const SizedBox(width: 0, height: 0);
               } else if (_currentStatus == DownloadTaskStatus.complete) {
-                return Icon(
-                  Icons.file_download,
-                  color: Theme.of(context).colorScheme.secondary,
+                return IconButton(
+                  icon: Icon(
+                    Icons.file_download,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                  onPressed: () {
+                    _downloadsHelper.deleteDownloadItem(
+                      jellyfinItemId: widget.item.id,
+                      deletedFor: widget.item.id,
+                    );
+                  },
                 );
               } else if (_currentStatus == DownloadTaskStatus.failed ||
                   _currentStatus == DownloadTaskStatus.undefined) {
