@@ -1,13 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import '../services/FinampSettingsHelper.dart';
-import '../services/JellyfinApiData.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../models/JellyfinModels.dart';
 import 'package:get_it/get_it.dart';
 
-
-
+import '../models/JellyfinModels.dart';
+import '../services/FinampSettingsHelper.dart';
+import '../services/JellyfinApiData.dart';
 
 class AlbumImage extends StatelessWidget {
   AlbumImage({Key? key, this.item}) : super(key: key);
@@ -69,6 +67,9 @@ class AlbumImage extends StatelessWidget {
               fit: BoxFit.cover,
               placeholder: (context, url) => Container(
                 color: Theme.of(context).cardColor,
+                child: Image.asset(
+                  'assets/images/logo.png',
+                ),
               ),
               errorWidget: (_, __, ___) => const _AlbumImageErrorPlaceholder(),
               // errorWidget: (_, __, ___) => Image.asset(
@@ -93,7 +94,10 @@ class _AlbumImageErrorPlaceholder extends StatelessWidget {
         borderRadius: AlbumImage.borderRadius,
         child: Container(
           color: Theme.of(context).cardColor,
-          child: const Icon(Icons.album),
+          child: Image.asset(
+            'assets/images/logo.png',
+          ),
+          // child: const Icon(Icons.album),
         ),
       ),
     );
