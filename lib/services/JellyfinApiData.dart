@@ -1,17 +1,16 @@
-import 'package:get_it/get_it.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter/foundation.dart';
-import '../models/JellyfinModels.dart';
-import 'package:chopper/chopper.dart';
-import 'package:logging/logging.dart';
-import '../models/FinampModels.dart';
-import 'JellyfinApi.dart';
 import 'dart:developer';
 
+import 'package:chopper/chopper.dart';
+import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:logging/logging.dart';
 
+import '../models/FinampModels.dart';
+import '../models/JellyfinModels.dart';
+import 'JellyfinApi.dart';
 
 class JellyfinApiData {
-
   final jellyfinApi = JellyfinApi.create();
   final _currentUserIdBox = Hive.box<String>("CurrentUserId");
   final _finampUserBox = Hive.box<FinampUser>("FinampUsers");
@@ -53,7 +52,6 @@ class JellyfinApiData {
   }
 
   void setCurrentUserCurrentViewId(String newViewId) {
-
     final currentUserId = _currentUserIdBox.get("CurrentUserId");
     FinampUser currentUserTemp = currentUser!;
 
@@ -70,6 +68,7 @@ class JellyfinApiData {
     String? searchTerm,
     required bool isGenres,
     String? filters,
+
     /// The record index to start at. All items with a lower index will be
     /// dropped from the results.
     int? startIndex,
@@ -77,7 +76,6 @@ class JellyfinApiData {
     /// The maximum number of records to return.
     int? limit,
   }) async {
-
     if (currentUser == null) {
       // When logging out, this request causes errors since currentUser is
       // required sometimes. We just return an empty list since this error
@@ -152,7 +150,6 @@ class JellyfinApiData {
         limit: limit,
       );
     } else {
-
       // This will be run when getting albums, songs in albums, and stuff like
       // that.
       response = await jellyfinApi.getItems(
@@ -186,6 +183,7 @@ class JellyfinApiData {
     String? searchTerm,
     required bool isGenres,
     String? filters,
+
     /// The record index to start at. All items with a lower index will be
     /// dropped from the results.
     int? startIndex,
@@ -193,7 +191,6 @@ class JellyfinApiData {
     /// The maximum number of records to return.
     int? limit,
   }) async {
-
     if (currentUser == null) {
       // When logging out, this request causes errors since currentUser is
       // required sometimes. We just return an empty list since this error
@@ -240,7 +237,6 @@ class JellyfinApiData {
     /// The maximum number of records to return.
     int? limit,
   }) async {
-
     if (currentUser == null) {
       // When logging out, this request causes errors since currentUser is
       // required sometimes. We just return an empty list since this error
@@ -270,7 +266,6 @@ class JellyfinApiData {
     }
   }
 
-
   /// Authenticates a user and saves the login details
   Future<void> authenticateViaName({
     required String username,
@@ -282,7 +277,8 @@ class JellyfinApiData {
     if (password == null) {
       response = await jellyfinApi.authenticateViaName({"Username": username});
     } else {
-      response = await jellyfinApi.authenticateViaName({"Username": username, "Pw": password});
+      response = await jellyfinApi
+          .authenticateViaName({"Username": username, "Pw": password});
     }
 
     if (response.isSuccessful) {
@@ -311,12 +307,15 @@ class JellyfinApiData {
     Response response = await jellyfinApi.getViews(currentUser!.id);
     if (response.isSuccessful) {
       final result = QueryResult_BaseItemDto.fromJson(response.body).items!;
-      _views.addEntries(result.where((element) => element.collectionType != "playlists")
+      _views.addEntries(result
+          .where((element) => element.collectionType != "playlists")
           .map((e) => MapEntry(e, e.collectionType == "music")));
-      jellyfinApiData.setCurrentUserViews(_views.entries
-          .where((element) => element.value == true)
-          .map((e) => e.key)
-          .toList(), false);
+      jellyfinApiData.setCurrentUserViews(
+          _views.entries
+              .where((element) => element.value == true)
+              .map((e) => e.key)
+              .toList(),
+          false);
       // if (view != null) {
       //   jellyfinApiData.setCurrentUserCurrentViewId(view);
       // }
@@ -358,7 +357,6 @@ class JellyfinApiData {
   /// Updates player progress so that Jellyfin can track what we're listening to
   Future<void> updatePlaybackProgress(
       PlaybackProgressInfo playbackProgressInfo) async {
-
     Response response =
         await jellyfinApi.playbackStatusUpdate(playbackProgressInfo);
 

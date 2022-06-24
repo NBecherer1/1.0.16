@@ -1,18 +1,16 @@
-import 'package:flutter_sticky_header/flutter_sticky_header.dart';
-import 'package:na0826/components/injection/injection_container.dart';
-import '../../core/constants/keys.dart';
-import '../../core/usecases/usecase.dart';
-import '../../services/FinampSettingsHelper.dart';
-import 'AlbumScreenContentFlexibleSpaceBar.dart';
-import '../../services/JellyfinApiData.dart';
-import '../../models/JellyfinModels.dart';
 import 'package:flutter/material.dart';
-import 'PlaylistNameEditButton.dart';
+import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:get_it/get_it.dart';
+import 'package:na0826/components/injection/injection_container.dart';
+
+import '../../core/usecases/usecase.dart';
+import '../../models/JellyfinModels.dart';
+import '../../services/FinampSettingsHelper.dart';
+import '../../services/JellyfinApiData.dart';
+import 'AlbumScreenContentFlexibleSpaceBar.dart';
 import 'DownloadButton.dart';
+import 'PlaylistNameEditButton.dart';
 import 'SongListTile.dart';
-
-
 
 class AlbumScreenContent extends StatefulWidget {
   final List<BaseItemDto> children;
@@ -28,7 +26,6 @@ class AlbumScreenContent extends StatefulWidget {
 }
 
 class _AlbumScreenContentState extends State<AlbumScreenContent> {
-
   final jellyfinApiData = GetIt.instance<JellyfinApiData>();
   List<List<BaseItemDto>> childrenPerDisc = [];
   bool isFavourite = false;
@@ -41,10 +38,12 @@ class _AlbumScreenContentState extends State<AlbumScreenContent> {
 
   Future _initAlbum() async {
     try {
-      if (widget.parent.type != "Playlist" && widget.children[0].parentIndexNumber != null) {
+      if (widget.parent.type != "Playlist" &&
+          widget.children[0].parentIndexNumber != null) {
         int? lastDiscNumber;
         for (var child in widget.children) {
-          if (child.parentIndexNumber != null && child.parentIndexNumber != lastDiscNumber) {
+          if (child.parentIndexNumber != null &&
+              child.parentIndexNumber != lastDiscNumber) {
             lastDiscNumber = child.parentIndexNumber;
             childrenPerDisc.add([]);
           }
@@ -52,7 +51,7 @@ class _AlbumScreenContentState extends State<AlbumScreenContent> {
         }
       }
       isFavourite = boxInitApp.containsKey(widget.parent.id);
-    } catch(e) {
+    } catch (e) {
       logger.e(e);
     }
   }
@@ -75,7 +74,8 @@ class _AlbumScreenContentState extends State<AlbumScreenContent> {
               items: widget.children,
             ),
             actions: [
-              if (widget.parent.type == "Playlist" && !FinampSettingsHelper.finampSettings.isOffline)
+              if (widget.parent.type == "Playlist" &&
+                  !FinampSettingsHelper.finampSettings.isOffline)
                 PlaylistNameEditButton(playlist: widget.parent),
               IconButton(
                 icon: isFavourite
@@ -100,7 +100,8 @@ class _AlbumScreenContentState extends State<AlbumScreenContent> {
               //DownloadButton(parent: parent, items: children)
             ],
           ),
-          if (childrenPerDisc.length > 1) // show headers only for multi disc albums
+          if (childrenPerDisc.length >
+              1) // show headers only for multi disc albums
             for (var childrenOfThisDisc in childrenPerDisc)
               SliverStickyHeader(
                 header: Container(
@@ -110,21 +111,20 @@ class _AlbumScreenContentState extends State<AlbumScreenContent> {
                   ),
                   color: Theme.of(context).primaryColor,
                   child: Text(
-                      "Disc " + childrenOfThisDisc[0].parentIndexNumber.toString(),
-                      style: const TextStyle(fontSize: 20.0)
-                  ),
+                      "Disc " +
+                          childrenOfThisDisc[0].parentIndexNumber.toString(),
+                      style: const TextStyle(fontSize: 20.0)),
                 ),
                 sliver: _SongsSliverList(
                     childrenForList: childrenOfThisDisc,
                     childrenForQueue: widget.children,
-                    parentId: widget.parent.id
-                ),
+                    parentId: widget.parent.id),
               )
-          else _SongsSliverList(
-              childrenForList: widget.children,
-              childrenForQueue: widget.children,
-              parentId: widget.parent.id
-          ),
+          else
+            _SongsSliverList(
+                childrenForList: widget.children,
+                childrenForQueue: widget.children,
+                parentId: widget.parent.id),
         ],
       ),
     );

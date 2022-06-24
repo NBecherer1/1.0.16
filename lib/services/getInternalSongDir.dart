@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 Future<Directory> getInternalSongDir() async {
   // TODO: Start using support directory by default, keep this around for legacy
   Directory appDir = await getApplicationDocumentsDirectory();
-  Directory songDir = Directory(appDir.path + "/songs");
+  Directory songDir = Directory("${appDir.path}/songs");
   if (!await songDir.exists()) {
     await songDir.create();
   }

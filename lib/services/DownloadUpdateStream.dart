@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:isolate';
 import 'dart:ui';
 
@@ -20,7 +21,7 @@ class DownloadUpdate {
 /// in main.dart adds all of flutter_downloader's events to this stream so that
 /// changes can be easily listened to in widgets.
 class DownloadUpdateStream {
-  ReceivePort _port = ReceivePort();
+  final ReceivePort _port = ReceivePort();
   // ignore: close_sinks
   final _controller = StreamController<DownloadUpdate>.broadcast();
 
@@ -43,9 +44,9 @@ class DownloadUpdateStream {
   }
 
   void addPrintListener() => stream.listen((event) {
-        print("NEW EVENT ${event.id} ${event.status} ${event.progress}");
+        log("NEW EVENT ${event.id} ${event.status} ${event.progress}");
         if (event.status == DownloadTaskStatus.complete) {
-          print("PRINT LISTENER COMPLETE ${event.id}");
+          log("PRINT LISTENER COMPLETE ${event.id}");
         }
       });
 

@@ -1,22 +1,23 @@
-import 'package:flutter_downloader/flutter_downloader.dart';
-import 'package:lottie/lottie.dart';
-import '../../services/DownloadUpdateStream.dart';
-import '../../components/errorSnackbar.dart';
-import '../../services/DownloadsHelper.dart';
-import '../../models/JellyfinModels.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive/hive.dart';
+import 'package:lottie/lottie.dart';
 
-
+import '../../components/errorSnackbar.dart';
+import '../../models/JellyfinModels.dart';
+import '../../services/DownloadUpdateStream.dart';
+import '../../services/DownloadsHelper.dart';
 
 class DownloadedIndicator extends StatefulWidget {
   const DownloadedIndicator({
     Key? key,
     required this.item,
+    required this.isSong,
   }) : super(key: key);
 
   final BaseItemDto item;
+  final bool isSong;
 
   @override
   _DownloadedIndicatorState createState() => _DownloadedIndicatorState();
@@ -34,7 +35,8 @@ class _DownloadedIndicatorState extends State<DownloadedIndicator> {
   @override
   void initState() {
     super.initState();
-    _downloadedIndicatorFuture = _downloadsHelper.getDownloadStatus([widget.item.id]);
+    _downloadedIndicatorFuture =
+        _downloadsHelper.getDownloadStatus([widget.item.id]);
 
     // We do this instead of using a StreamBuilder because the StreamBuilder
     // kept dropping events. With this, we can also make it so that the widget
@@ -64,7 +66,8 @@ class _DownloadedIndicatorState extends State<DownloadedIndicator> {
           // widget.item.id is changed, so this should only rebuild when the
           // item is first downloaded and when it is deleted.
           return ValueListenableBuilder<Box<DownloadedSong>>(
-            valueListenable: _downloadsHelper.getDownloadedItemsListenable(keys: [widget.item.id]),
+            valueListenable: _downloadsHelper
+                .getDownloadedItemsListenable(keys: [widget.item.id]),
             builder: (context, box, _) {
               if (_downloadTaskId == null && box.get(widget.item.id) != null) {
                 _downloadTaskId = box.get(widget.item.id)!.downloadId;
@@ -86,13 +89,18 @@ class _DownloadedIndicatorState extends State<DownloadedIndicator> {
               //   _currentStatus = snapshot.data?.status;
               // }
               if (_currentStatus == null) {
-                return IconButton(
-                  icon: const Icon(Icons.downloading, color: Colors.grey),
-                  onPressed: () {
-                    _downloadsHelper.addDownloadedItem(widget.item);
-                  },
-                );
-                return const SizedBox(width: 0, height: 0);
+                if (widget.isSong) {
+                  return IconButton(
+                    icon: const Icon(Icons.downloading, color: Colors.grey),
+                    onPressed: () {
+                      setState(() {
+                        _downloadsHelper.addDownloadedItem(widget.item);
+                      });
+                    },
+                  );
+                } else {
+                  return const SizedBox.shrink();
+                }
               } else if (_currentStatus == DownloadTaskStatus.complete) {
                 return IconButton(
                   icon: Icon(
@@ -121,16 +129,12 @@ class _DownloadedIndicatorState extends State<DownloadedIndicator> {
                   _currentStatus == DownloadTaskStatus.running) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 5),
-                  child: Lottie.asset(
-                    'assets/icon/download.json',
-                    width: 35, height: 35
-                  ),
+                  child: Lottie.asset('assets/icon/download.json',
+                      width: 35, height: 35),
                 );
               } else {
                 return const SizedBox(width: 0, height: 0);
               }
-              // },
-              // );
             },
           );
         } else if (snapshot.hasError) {

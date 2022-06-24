@@ -1,20 +1,18 @@
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:package_info/package_info.dart';
-import 'package:http/http.dart' as http;
-import '../models/JellyfinModels.dart';
-import 'package:chopper/chopper.dart';
-import 'package:get_it/get_it.dart';
 import 'dart:io' show Platform;
-import 'JellyfinApiData.dart';
 
+import 'package:chopper/chopper.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:get_it/get_it.dart';
+import 'package:http/http.dart' as http;
+import 'package:package_info/package_info.dart';
+
+import '../models/JellyfinModels.dart';
+import 'JellyfinApiData.dart';
 
 part 'JellyfinApi.chopper.dart';
 
-const String defaultFields = "parentId,indexNumber,songCount,childCount,providerIds,genres,tags,Etag,albumPrimaryImageTag,parentPrimaryImageItemId";
-
-
-
-
+const String defaultFields =
+    "parentId,indexNumber,songCount,childCount,providerIds,genres,tags,Etag,albumPrimaryImageTag,parentPrimaryImageItemId";
 
 //Get Public IP and adds so you can only allow authentication from specific location
 class IpInfoApi {
@@ -29,8 +27,6 @@ class IpInfoApi {
     }
   }
 }
-
-
 
 @ChopperApi()
 abstract class JellyfinApi extends ChopperService {
@@ -408,33 +404,35 @@ Future<String> getAuthHeader() async {
   String authHeader = "MediaBrowser ";
 
   if (jellyfinApiData.currentUser != null) {
-    authHeader = authHeader + 'UserId="${jellyfinApiData.currentUser!.id}", ';
+    authHeader = '${authHeader}UserId="${jellyfinApiData.currentUser!.id}", ';
   }
 
   // TODO: 5 Adding DeviceName and Unique UUID value identifying the current device, allows Jellyfin to only allow sign-ins from specific devices.
   //Adding DeviceName and Unique UUID value identifying the current device, allows Jellyfin to only allow sign-ins from specific devices.
-  authHeader = authHeader + 'Client="NA 0826", ';
+  authHeader = '${authHeader}Client="NA 0826", ';
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
   final ipAddress = await IpInfoApi.getIPAddress();
   if (Platform.isAndroid) {
     AndroidDeviceInfo androidDeviceInfo = await deviceInfo.androidInfo;
     // authHeader = authHeader + 'Device="${androidDeviceInfo.brand}", ';
-    authHeader = authHeader + 'Device= DeviceName: ${androidDeviceInfo.manufacturer} - IP Address: $ipAddress - Device ID: ${androidDeviceInfo.androidId}", ';
-    authHeader = authHeader + 'DeviceId="${androidDeviceInfo.androidId}", ';
+    authHeader =
+        '${authHeader}Device= DeviceName: ${androidDeviceInfo.manufacturer} - IP Address: $ipAddress - Device ID: ${androidDeviceInfo.androidId}", ';
+    authHeader = '${authHeader}DeviceId="${androidDeviceInfo.androidId}", ';
   } else if (Platform.isIOS) {
     IosDeviceInfo iosDeviceInfo = await deviceInfo.iosInfo;
     //authHeader = authHeader + 'Device="${iosDeviceInfo.utsname.nodename} - ${iosDeviceInfo.identifierForVendor}", ';
-    authHeader = authHeader + 'Device= DeviceName: ${iosDeviceInfo.utsname.nodename} - IP Address: $ipAddress - Device ID: ${iosDeviceInfo.identifierForVendor}", ';
-    authHeader = authHeader + 'DeviceId="${iosDeviceInfo.identifierForVendor}", ';
+    authHeader =
+        '${authHeader}Device= DeviceName: ${iosDeviceInfo.utsname.nodename} - IP Address: $ipAddress - Device ID: ${iosDeviceInfo.identifierForVendor}", ';
+    authHeader =
+        '${authHeader}DeviceId="${iosDeviceInfo.identifierForVendor}", ';
   } else {
     throw "getAuthHeader() only supports Android and iOS";
   }
 
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
-  authHeader = authHeader + 'Version="${packageInfo.version}"';
+  authHeader = '${authHeader}Version="${packageInfo.version}"';
   return authHeader;
 }
-
 
 /// Creates the X-Emby-Token header
 String? getTokenHeader() {

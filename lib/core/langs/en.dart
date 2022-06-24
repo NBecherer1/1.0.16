@@ -1,4 +1,3 @@
-
 const Map<String, String> en = {
   "error_wrong": "Something went wrong try again later",
   "error_wrong_admin": "Something went wrong, contact admin",
@@ -9,7 +8,8 @@ const Map<String, String> en = {
   "help_center": "How To..",
   "favorites": "Favorites",
   "completed_success": "Completed successfully",
-  "error_connection": "No internet connection. Make sure Wi-Fi or cellular data is turned on, then try again",
+  "error_connection":
+      "No internet connection. Make sure Wi-Fi or cellular data is turned on, then try again",
   "how_center": "Help",
   "how_change_track": "Change the Playback Speed",
   "how_download": "Download a Service to the App",
@@ -20,6 +20,5 @@ const Map<String, String> en = {
   "how_resume": "Resume Where you Left off in Service",
   "how_search": "Search the Services/Subjects Tab",
   "privacy_page": "Privacy Policy",
-
-
+  "invalid_qrcode": "invalid qr code",
 };

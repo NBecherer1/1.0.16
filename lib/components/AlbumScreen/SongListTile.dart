@@ -1,19 +1,18 @@
-import '../../services/MusicPlayerBackgroundTask.dart';
 import 'package:audio_service/audio_service.dart';
-import '../../services/FinampSettingsHelper.dart';
-import '../../services/AudioServiceHelper.dart';
-import '../../services/DownloadsHelper.dart';
-import '../../services/JellyfinApiData.dart';
-import '../../services/processArtist.dart';
-import '../../models/JellyfinModels.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'DownloadedIndicator.dart';
-import '../printDuration.dart';
-import '../errorSnackbar.dart';
+
+import '../../models/JellyfinModels.dart';
+import '../../services/AudioServiceHelper.dart';
+import '../../services/DownloadsHelper.dart';
+import '../../services/FinampSettingsHelper.dart';
+import '../../services/JellyfinApiData.dart';
+import '../../services/MusicPlayerBackgroundTask.dart';
+import '../../services/processArtist.dart';
 import '../AlbumImage.dart';
-
-
+import '../errorSnackbar.dart';
+import '../printDuration.dart';
+import 'DownloadedIndicator.dart';
 
 enum SongListTileMenuItems {
   AddToQueue,
@@ -55,7 +54,6 @@ class SongListTile extends StatefulWidget {
 }
 
 class _SongListTileState extends State<SongListTile> {
-
   final _audioHandler = GetIt.instance<MusicPlayerBackgroundTask>();
   final _audioServiceHelper = GetIt.instance<AudioServiceHelper>();
   final _jellyfinApiData = GetIt.instance<JellyfinApiData>();
@@ -74,32 +72,30 @@ class _SongListTileState extends State<SongListTile> {
         stream: _audioHandler.mediaItem,
         builder: (context, snapshot) {
           return RichText(
-            text: TextSpan(
-              children: [
-                // third condition checks if the item is viewed from its album (instead of e.g. a playlist)
-                // same horrible check as in canGoToAlbum in GestureDetector below
-                if (mutableItem.indexNumber != null
-                    && !widget.isSong
-                    && mutableItem.albumId == widget.parentId)
-                  TextSpan(
+            text: TextSpan(children: [
+              // third condition checks if the item is viewed from its album (instead of e.g. a playlist)
+              // same horrible check as in canGoToAlbum in GestureDetector below
+              if (mutableItem.indexNumber != null &&
+                  !widget.isSong &&
+                  mutableItem.albumId == widget.parentId)
+                TextSpan(
                     text: "${mutableItem.indexNumber}. ",
                     style: TextStyle(
                       color: Theme.of(context).disabledColor,
-                    )
-                ),
-                TextSpan(
+                    )),
+              TextSpan(
                 text: mutableItem.name ?? "Unknown Name",
                 style: TextStyle(
-                  color: snapshot.data?.extras?["itemJson"]["Id"] == mutableItem.id &&
-                      snapshot.data?.extras?["itemJson"]["AlbumId"] == widget.parentId
+                  color: snapshot.data?.extras?["itemJson"]["Id"] ==
+                              mutableItem.id &&
+                          snapshot.data?.extras?["itemJson"]["AlbumId"] ==
+                              widget.parentId
                       ? Theme.of(context).colorScheme.primary // TODO: 13
                       // ? Theme.of(context).colorScheme.secondary
                       : null,
-                  ),
                 ),
-              ],
-              style: const TextStyle(fontSize: 16.0)
-            ),
+              ),
+            ], style: const TextStyle(fontSize: 16.0)),
           );
         },
       ),
@@ -108,12 +104,15 @@ class _SongListTileState extends State<SongListTile> {
               mutableItem.artists?.join(", ") ?? mutableItem.albumArtist)
           : printDuration(
               Duration(
-                  microseconds: (mutableItem.runTimeTicks == null
-                      ? 0
-                      : mutableItem.runTimeTicks! ~/ 10),
+                microseconds: (mutableItem.runTimeTicks == null
+                    ? 0
+                    : mutableItem.runTimeTicks! ~/ 10),
               ),
             )),
-      trailing: DownloadedIndicator(item: mutableItem),
+      trailing: DownloadedIndicator(
+        item: mutableItem,
+        isSong: widget.isSong,
+      ),
       // trailing: DownloadedIndicator(item: mutableItem),
       onTap: () {
         // TODO: 2
@@ -214,18 +213,19 @@ class _SongListTileState extends State<SongListTile> {
         );
 
         switch (selection) {
-
           case SongListTileMenuItems.AddToQueue:
             await _audioServiceHelper.addQueueItem(mutableItem);
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Added to queue.")));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text("Added to queue.")));
             break;
 
           case SongListTileMenuItems.ReplaceQueueWithItem:
             await _audioServiceHelper
                 .replaceQueueWithItem(itemList: [mutableItem]);
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Queue replaced.")));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text("Queue replaced.")));
             break;
-            // TODO: 14
+          // TODO: 14
           // case SongListTileMenuItems.AddToPlaylist:
           //   Navigator.of(context).pushNamed("/music/addtoplaylist", arguments: mutableItem.id);
           //   break;
@@ -238,17 +238,21 @@ class _SongListTileState extends State<SongListTile> {
 
               // downloadedParent won't be null here since the menu item already
               // checks if the DownloadedParent exists.
-              album = downloadsHelper.getDownloadedParent(mutableItem.parentId!)!.item;
+              album = downloadsHelper
+                  .getDownloadedParent(mutableItem.parentId!)!
+                  .item;
             } else {
               // If online, get the album's BaseItemDto from the server.
               try {
-                album = await _jellyfinApiData.getItemById(mutableItem.parentId!);
+                album =
+                    await _jellyfinApiData.getItemById(mutableItem.parentId!);
               } catch (e) {
                 errorSnackbar(e, context);
                 break;
               }
             }
-            Navigator.of(context).pushNamed("/music/albumscreen", arguments: album);
+            Navigator.of(context)
+                .pushNamed("/music/albumscreen", arguments: album);
             break;
 
           // TODO: 14

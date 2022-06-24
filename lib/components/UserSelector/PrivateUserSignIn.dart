@@ -1,16 +1,16 @@
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:na0826/widgets/responsive_safe_area.dart';
-import 'package:na0826/widgets/loading_dialog.dart';
-import 'package:na0826/core/usecases/usecase.dart';
-import 'package:na0826/core/constants/keys.dart';
-import '../injection/injection_container.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:get/get.dart';
+import 'package:na0826/core/constants/keys.dart';
+import 'package:na0826/core/usecases/usecase.dart';
+import 'package:na0826/widgets/loading_dialog.dart';
+import 'package:na0826/widgets/responsive_safe_area.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../../widgets/flash_helper.dart';
+import '../injection/injection_container.dart';
 import 'loginHelper.dart';
-
-
 
 class PrivateUserSignIn extends StatefulWidget {
   const PrivateUserSignIn({Key? key}) : super(key: key);
@@ -20,7 +20,6 @@ class PrivateUserSignIn extends StatefulWidget {
 }
 
 class _PrivateUserSignInState extends State<PrivateUserSignIn> {
-
   final TextEditingController _baseUrlController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -35,14 +34,13 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
     var _username = boxInitApp.get(Keys.username, defaultValue: '');
     var _password = boxInitApp.get(Keys.password, defaultValue: '');
     var hasRemember = boxInitApp.get(Keys.remember, defaultValue: true);
-    _baseUrlController.text = _baseUrl??'';
-    _usernameController.text = _username??'';
-    _passwordController.text = _password??'';
-    _remember = hasRemember??true;
+    _baseUrlController.text = _baseUrl ?? '';
+    _usernameController.text = _username ?? '';
+    _passwordController.text = _password ?? '';
+    _remember = hasRemember ?? true;
     _askForPermissions();
     super.initState();
   }
-
 
   Future<String?> _scanQR() async {
     try {
@@ -77,210 +75,246 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final node = FocusScope.of(context);
-    return ResponsiveSafeArea(
-        builder: (BuildContext context) {
-          return Scaffold(
-            body: Stack(
-              children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Form(
-                    key: formKey,
-                    child: AutofillGroup(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 24),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                'assets/images/logo-transparent-min.webp',
-                                width: size.width/2,
-                                height: size.width/2,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: GestureDetector(
-                                  onDoubleTap: () async {
-                                    if (_baseUrlController.text.isEmpty) {
-                                      ClipboardData? cdata = await Clipboard.getData(Clipboard.kTextPlain);
-                                      if (cdata != null  && cdata.text != null) {
-                                        _baseUrlController.text = cdata.text!;
+    return ResponsiveSafeArea(builder: (BuildContext context) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            Align(
+              alignment: Alignment.center,
+              child: Form(
+                key: formKey,
+                child: AutofillGroup(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 24),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/logo-transparent-min.webp',
+                            width: size.width / 2,
+                            height: size.width / 2,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: GestureDetector(
+                              onDoubleTap: () async {
+                                if (_baseUrlController.text.isEmpty) {
+                                  ClipboardData? cdata =
+                                      await Clipboard.getData(
+                                          Clipboard.kTextPlain);
+                                  if (cdata != null && cdata.text != null) {
+                                    _baseUrlController.text = cdata.text!;
+                                  }
+                                } else {
+                                  _baseUrlController.clear();
+                                }
+                              },
+                              child: TextFormField(
+                                // initialValue: baseUrl,
+                                controller: _baseUrlController,
+                                keyboardType: TextInputType.url,
+                                autocorrect: false,
+                                decoration: InputDecoration(
+                                  labelText: "Server Name",
+                                  // labelText: "Base URL",
+                                  hintText: "https://domain.com",
+                                  border: const OutlineInputBorder(),
+                                  suffixIcon: IconButton(
+                                    icon:
+                                        Image.asset('assets/icon/QR_Icon.png'),
+                                    onPressed: () async {
+                                      String? val = await _scanQR();
+                                      if (val != null &&
+                                          val.contains('Server Name')) {
+                                        _baseUrlController.text =
+                                            val.replaceAll('Server Name: ', '');
+                                      } else {
+                                        FlashHelper.errorBar(
+                                            context: context,
+                                            message: 'invalid_qrcode'.tr);
                                       }
-                                    } else {
-                                      _baseUrlController.clear();
-                                    }
-                                  },
-                                  child: TextFormField(
-                                    // initialValue: baseUrl,
-                                    controller: _baseUrlController,
-                                    keyboardType: TextInputType.url,
-                                    autocorrect: false,
-                                    decoration: InputDecoration(
-                                      labelText: "Server Name",
-                                      // labelText: "Base URL",
-                                      hintText: "https://domain.com",
-                                      border: const OutlineInputBorder(),
-                                      suffixIcon: IconButton(
-                                        icon: Image.asset('assets/icon/QR_Icon.png'),
-                                        onPressed: () async {
-                                          String? val = await _scanQR();
-                                          if (val != null) {
-                                            _baseUrlController.text = val
-                                                .replaceAll('Server Name: ', '');
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                    textInputAction: TextInputAction.next,
-                                    onEditingComplete: () => node.nextFocus(),
-                                    validator: (value) {
-                                      if (value?.isEmpty == true) {
-                                        return "Server Name cannot be empty";
-                                      }
-
-                                      // TODO: 11
-                                      if (!value!.startsWith("https://")) {
-                                        return "URL must start with https://";
-                                      }
-
-                                      // if (!value.startsWith("http://") &&
-                                      //     !value.startsWith("https://")) {
-                                      //   return "URL must start with http:// or https://";
-                                      // }
-                                      if (value.endsWith("/")) {
-                                        return "URL must not include a trailing slash";
-                                      }
-                                      return null;
                                     },
-                                    // onSaved: (newValue) => baseUrl = newValue,
+                                  ),
+                                ),
+                                textInputAction: TextInputAction.next,
+                                onEditingComplete: () => node.nextFocus(),
+                                validator: (value) {
+                                  if (value?.isEmpty == true) {
+                                    return "Server Name cannot be empty";
+                                  }
+
+                                  // TODO: 11
+                                  if (!value!.startsWith("https://")) {
+                                    return "URL must start with https://";
+                                  }
+
+                                  // if (!value.startsWith("http://") &&
+                                  //     !value.startsWith("https://")) {
+                                  //   return "URL must start with http:// or https://";
+                                  // }
+                                  if (value.endsWith("/")) {
+                                    return "URL must not include a trailing slash";
+                                  }
+                                  return null;
+                                },
+                                // onSaved: (newValue) => baseUrl = newValue,
+                              ),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GestureDetector(
+                                    onDoubleTap: () async {
+                                      if (_usernameController.text.isEmpty) {
+                                        ClipboardData? cdata =
+                                            await Clipboard.getData(
+                                                Clipboard.kTextPlain);
+                                        if (cdata != null &&
+                                            cdata.text != null) {
+                                          _usernameController.text =
+                                              cdata.text!;
+                                        }
+                                      } else {
+                                        _usernameController.clear();
+                                      }
+                                    },
+                                    child: TextFormField(
+                                      autocorrect: false,
+                                      controller: _usernameController,
+                                      keyboardType:
+                                          TextInputType.visiblePassword,
+                                      autofillHints: const [
+                                        AutofillHints.username
+                                      ],
+                                      decoration: InputDecoration(
+                                        border: const OutlineInputBorder(),
+                                        labelText: "Username",
+                                        suffixIcon: IconButton(
+                                          icon: Image.asset(
+                                              'assets/icon/QR_Icon.png'),
+                                          onPressed: () async {
+                                            String? val = await _scanQR();
+                                            if (val != null &&
+                                                val.contains('Username')) {
+                                              final startIndex =
+                                                  val.indexOf('\n');
+                                              final user =
+                                                  val.substring(0, startIndex);
+                                              final pass = val.substring(
+                                                  startIndex, val.length);
+                                              _usernameController.text = user
+                                                  .replaceAll('Username: ', '');
+                                              _passwordController.text = pass
+                                                  .replaceAll('Password: ', '');
+                                            } else {
+                                              FlashHelper.errorBar(
+                                                  context: context,
+                                                  message: 'invalid_qrcode'.tr);
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      textInputAction: TextInputAction.next,
+                                      onEditingComplete: () => node.nextFocus(),
+                                      validator: (val) {
+                                        if (val!.isEmpty) {
+                                          return 'required field';
+                                        } else {
+                                          return null;
+                                        }
+                                      },
+                                      // onSaved: (newValue) => username = newValue,
+                                    ),
                                   ),
                                 ),
                               ),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: GestureDetector(
-                                        onDoubleTap: () async {
-                                          if (_usernameController.text.isEmpty) {
-                                            ClipboardData? cdata = await Clipboard.getData(Clipboard.kTextPlain);
-                                            if (cdata != null  && cdata.text != null) {
-                                              _usernameController.text = cdata.text!;
-                                            }
-                                          } else {
-                                            _usernameController.clear();
-                                          }
-                                        },
-                                        child: TextFormField(
-                                          autocorrect: false,
-                                          controller: _usernameController,
-                                          keyboardType: TextInputType.visiblePassword,
-                                          autofillHints: const [AutofillHints.username],
-                                          decoration: InputDecoration(
-                                            border: const OutlineInputBorder(),
-                                            labelText: "Username",
-                                            suffixIcon: IconButton(
-                                              icon: Image.asset('assets/icon/QR_Icon.png'),
-                                              onPressed: () async {
-                                                String? val = await _scanQR();
-                                                if (val != null) {
-                                                  final startIndex = val.indexOf('\n');
-                                                  final user = val.substring(0, startIndex);
-                                                  final pass = val.substring(startIndex, val.length);
-                                                  _usernameController.text = user.replaceAll('Username: ', '');
-                                                  _passwordController.text = pass.replaceAll('Password: ', '');
-                                                }
-                                              },
-                                            ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: GestureDetector(
+                                    onDoubleTap: () async {
+                                      if (_passwordController.text.isEmpty) {
+                                        ClipboardData? cdata =
+                                            await Clipboard.getData(
+                                                Clipboard.kTextPlain);
+                                        if (cdata != null &&
+                                            cdata.text != null) {
+                                          _passwordController.text =
+                                              cdata.text!;
+                                        }
+                                      } else {
+                                        _passwordController.clear();
+                                      }
+                                    },
+                                    child: TextFormField(
+                                      autocorrect: false,
+                                      obscureText: obscureText,
+                                      controller: _passwordController,
+                                      keyboardType:
+                                          TextInputType.visiblePassword,
+                                      autofillHints: const [
+                                        AutofillHints.password
+                                      ],
+                                      decoration: InputDecoration(
+                                        border: const OutlineInputBorder(),
+                                        labelText: "Password",
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            obscureText
+                                                ? Icons.visibility
+                                                : Icons.visibility_off,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
                                           ),
-                                          textInputAction: TextInputAction.next,
-                                          onEditingComplete: () => node.nextFocus(),
-                                          validator: (val) {
-                                            if(val!.isEmpty) {
-                                              return 'required field';
-                                            } else {
-                                              return null;
-                                            }
+                                          onPressed: () {
+                                            setState(() {
+                                              obscureText = !obscureText;
+                                            });
                                           },
-                                          // onSaved: (newValue) => username = newValue,
                                         ),
                                       ),
+                                      textInputAction: TextInputAction.done,
+                                      onFieldSubmitted: (_) async =>
+                                          await sendForm(),
+                                      validator: (val) {
+                                        if (val!.isEmpty) {
+                                          return 'required field';
+                                        } else {
+                                          return null;
+                                        }
+                                      },
+                                      // onSaved: (newValue) => password = newValue,
                                     ),
                                   ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: GestureDetector(
-                                        onDoubleTap: () async {
-                                          if (_passwordController.text.isEmpty) {
-                                            ClipboardData? cdata = await Clipboard.getData(Clipboard.kTextPlain);
-                                            if (cdata != null  && cdata.text != null) {
-                                              _passwordController.text = cdata.text!;
-                                            }
-                                          } else {
-                                            _passwordController.clear();
-                                          }
-                                        },
-                                        child: TextFormField(
-                                          autocorrect: false,
-                                          obscureText: obscureText,
-                                          controller: _passwordController,
-                                          keyboardType: TextInputType.visiblePassword,
-                                          autofillHints: const [AutofillHints.password],
-                                          decoration: InputDecoration(
-                                            border: const OutlineInputBorder(),
-                                            labelText: "Password",
-                                            suffixIcon: IconButton(
-                                              icon: Icon(obscureText
-                                                  ? Icons.visibility : Icons.visibility_off,
-                                                color: Theme.of(context).colorScheme.primary,
-                                              ),
-                                              onPressed: () {
-                                                setState(() {
-                                                  obscureText = !obscureText;
-                                                });
-                                              },
-                                            ),
-                                          ),
-                                          textInputAction: TextInputAction.done,
-                                          onFieldSubmitted: (_) async => await sendForm(),
-                                          validator: (val) {
-                                            if(val!.isEmpty) {
-                                              return 'required field';
-                                            } else {
-                                              return null;
-                                            }
-                                          },
-                                          // onSaved: (newValue) => password = newValue,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
+                            ],
+                          ),
+                          CheckboxListTile(
+                            title: const Text('Remember me'),
+                            // subtitle: const Text('A computer science portal for geeks.'),
+                            secondary: const Icon(Icons.save),
+                            autofocus: false,
+                            activeColor: Theme.of(context).colorScheme.primary,
+                            checkColor: Colors.white,
+                            selected: _remember,
+                            value: _remember,
+                            onChanged: (bool? value) {
+                              if (formKey.currentState?.validate() == true) {
+                                setState(() {
+                                  _remember = value ?? false;
+                                });
+                              }
+                            },
+                          ),
 
-                              CheckboxListTile(
-                                title: const Text('Remember me'),
-                                // subtitle: const Text('A computer science portal for geeks.'),
-                                secondary: const Icon(Icons.save),
-                                autofocus: false,
-                                activeColor: Theme.of(context).colorScheme.primary,
-                                checkColor: Colors.white,
-                                selected: _remember,
-                                value: _remember,
-                                onChanged: (bool? value) {
-                                  if (formKey.currentState?.validate() == true) {
-                                    setState(() {
-                                      _remember = value??false;
-                                    });
-                                  }
-                                },
-                              ),
-
-                              /*
+                          /*
                             Container(
                               alignment: const Alignment(1.0, 0.0),
                               padding: const EdgeInsets.only(top: 15.0, left: 0, right: 8),
@@ -302,38 +336,38 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
                             ),
                              */
 
-                              const SizedBox(height: 24),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pushNamed("/logs"),
-                                      child: const Text("LOGS"),
-                                    ),
-                                    ElevatedButton(
-                                      child: const Text("LOGIN"),
-                                      // onPressed: isAuthenticating ? null : () async => await sendForm(),
-                                      onPressed: () async => await sendForm(),
-                                    ),
-                                  ],
+                          const SizedBox(height: 24),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.of(context).pushNamed("/logs"),
+                                  child: const Text("LOGS"),
                                 ),
-                              ),
-
-                            ],
+                                ElevatedButton(
+                                  child: const Text("LOGIN"),
+                                  // onPressed: isAuthenticating ? null : () async => await sendForm(),
+                                  onPressed: () async => await sendForm(),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
-          );
-        }
-    );
+          ],
+        ),
+      );
+    });
   }
 
   Future<void> sendForm() async {
@@ -347,7 +381,6 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
         await boxInitApp.put(Keys.username, _usernameController.text.trim());
         await boxInitApp.put(Keys.password, _passwordController.text.trim());
       } else {
-
         if (boxInitApp.containsKey(Keys.baseUrl)) {
           await boxInitApp.delete(Keys.baseUrl);
         }
@@ -363,7 +396,6 @@ class _PrivateUserSignInState extends State<PrivateUserSignIn> {
         if (boxInitApp.containsKey(Keys.remember)) {
           await boxInitApp.delete(Keys.remember);
         }
-
       }
 
       await loginHelper(

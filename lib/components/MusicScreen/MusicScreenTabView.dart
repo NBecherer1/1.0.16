@@ -1,23 +1,22 @@
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import '../../components/AlbumScreen/SongListTile.dart';
-import '../../services/FinampSettingsHelper.dart';
-import '../../services/JellyfinApiData.dart';
-import '../../services/DownloadsHelper.dart';
-import '../FirstPageProgressIndicator.dart';
-import '../NewPageProgressIndicator.dart';
-import '../../models/JellyfinModels.dart';
-import '../../models/FinampModels.dart';
+import 'dart:developer' as devLog;
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'dart:developer' as devLog;
 import 'package:hive/hive.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+
+import '../../components/AlbumScreen/SongListTile.dart';
+import '../../models/FinampModels.dart';
+import '../../models/JellyfinModels.dart';
+import '../../services/DownloadsHelper.dart';
+import '../../services/FinampSettingsHelper.dart';
+import '../../services/JellyfinApiData.dart';
+import '../FirstPageProgressIndicator.dart';
+import '../NewPageProgressIndicator.dart';
 import '../errorSnackbar.dart';
 import '../injection/injection_container.dart';
 import 'AlbumItem.dart';
-import 'dart:math';
-
-
-
 
 class MusicScreenTabView extends StatefulWidget {
   const MusicScreenTabView({
@@ -55,7 +54,7 @@ class _MusicScreenTabViewState extends State<MusicScreenTabView>
   static const _pageSize = 100;
 
   final PagingController<int, BaseItemDto> _pagingController =
-  PagingController(firstPageKey: 0);
+      PagingController(firstPageKey: 0);
 
   List<BaseItemDto>? offlineSortedItems;
 
@@ -69,7 +68,6 @@ class _MusicScreenTabViewState extends State<MusicScreenTabView>
   // This function just lets us easily set stuff to the getItems call we want.
   Future<void> _getPage(int pageKey) async {
     try {
-
       // TODO: 22
       if (_includeItemTypes(widget.tabContentType) == 'Audio') {
         final newItems = await jellyfinApiData.getItemsMusic(
@@ -86,15 +84,14 @@ class _MusicScreenTabViewState extends State<MusicScreenTabView>
           // artist view. If it's null, sort by "SortName". If it isn't null, check
           // if the parentItem is a MusicArtist. If it is, sort by year. Otherwise,
           // sort by SortName. If widget.sortBy is set, it is used instead.
-          sortBy: widget.sortBy?.jellyfinName == null
-              ? widget.tabContentType == TabContentType.songs
-              ? "Album,SortName"
-              : widget.parentItem == null
-              ? "SortName"
-              : widget.parentItem?.type == "MusicArtist"
-              ? "ProductionYear"
-              : "SortName"
-              : widget.sortBy?.jellyfinName,
+          sortBy: widget.sortBy?.jellyfinName ??
+              (widget.tabContentType == TabContentType.songs
+                  ? "Album,SortName"
+                  : widget.parentItem == null
+                      ? "SortName"
+                      : widget.parentItem?.type == "MusicArtist"
+                          ? "ProductionYear"
+                          : "SortName"),
           sortOrder: widget.sortOrder?.humanReadableName ??
               SortOrder.ascending.humanReadableName,
           searchTerm: widget.searchTerm,
@@ -126,15 +123,14 @@ class _MusicScreenTabViewState extends State<MusicScreenTabView>
           // artist view. If it's null, sort by "SortName". If it isn't null, check
           // if the parentItem is a MusicArtist. If it is, sort by year. Otherwise,
           // sort by SortName. If widget.sortBy is set, it is used instead.
-          sortBy: widget.sortBy?.jellyfinName == null
-              ? widget.tabContentType == TabContentType.songs
-              ? "Album,SortName"
-              : widget.parentItem == null
-              ? "SortName"
-              : widget.parentItem?.type == "MusicArtist"
-              ? "ProductionYear"
-              : "SortName"
-              : widget.sortBy?.jellyfinName,
+          sortBy: widget.sortBy?.jellyfinName ??
+              (widget.tabContentType == TabContentType.songs
+                  ? "Album,SortName"
+                  : widget.parentItem == null
+                      ? "SortName"
+                      : widget.parentItem?.type == "MusicArtist"
+                          ? "ProductionYear"
+                          : "SortName"),
           sortOrder: widget.sortOrder?.humanReadableName ??
               SortOrder.ascending.humanReadableName,
           searchTerm: widget.searchTerm,
@@ -161,7 +157,7 @@ class _MusicScreenTabViewState extends State<MusicScreenTabView>
     try {
       return widget.parentItem?.type! ??
           jellyfinApiData.currentUser!.currentView!.type!;
-    } catch(e) {
+    } catch (e) {
       logger.e(e);
       return 'undefined';
     }
@@ -228,38 +224,45 @@ class _MusicScreenTabViewState extends State<MusicScreenTabView>
                 // If we're on the songs tab, just get all of the downloaded items
                 offlineSortedItems = downloadsHelper.downloadedItems
                     .where((element) =>
-                element.viewId ==
-                    jellyfinApiData.currentUser!.currentViewId)
-                    .map((e) => e.song).toList();
+                        element.viewId ==
+                        jellyfinApiData.currentUser!.currentViewId)
+                    .map((e) => e.song)
+                    .toList();
               } else {
-                offlineSortedItems = downloadsHelper.downloadedParents.where((element) =>
-                element.item.type == _includeItemTypes(widget.tabContentType) &&
-                    element.viewId == jellyfinApiData.currentUser!.currentViewId)
-                    .map((e) => e.item).toList();
+                offlineSortedItems = downloadsHelper.downloadedParents
+                    .where((element) =>
+                        element.item.type ==
+                            _includeItemTypes(widget.tabContentType) &&
+                        element.viewId ==
+                            jellyfinApiData.currentUser!.currentViewId)
+                    .map((e) => e.item)
+                    .toList();
               }
             } else {
               if (widget.tabContentType == TabContentType.songs) {
                 offlineSortedItems = downloadsHelper.downloadedItems
                     .where(
                       (element) {
-                    return _offlineSearch(
-                        item: element.song,
-                        searchTerm: widget.searchTerm!,
-                        tabContentType: widget.tabContentType);
-                  },
-                )
+                        return _offlineSearch(
+                            item: element.song,
+                            searchTerm: widget.searchTerm!,
+                            tabContentType: widget.tabContentType);
+                      },
+                    )
                     .map((e) => e.song)
                     .toList();
               } else {
                 offlineSortedItems = downloadsHelper.downloadedParents
                     .where(
                       (element) {
-                    return _offlineSearch(
-                        item: element.item,
-                        searchTerm: widget.searchTerm!,
-                        tabContentType: widget.tabContentType);
-                  },
-                ).map((e) => e.item).toList();
+                        return _offlineSearch(
+                            item: element.item,
+                            searchTerm: widget.searchTerm!,
+                            tabContentType: widget.tabContentType);
+                      },
+                    )
+                    .map((e) => e.item)
+                    .toList();
               }
             }
 
@@ -314,8 +317,8 @@ class _MusicScreenTabViewState extends State<MusicScreenTabView>
                       return a.premiereDate!.compareTo(b.premiereDate!);
                     }
                   case SortBy.random:
-                  // We subtract the result by one so that we can get -1 values
-                  // (see comareTo documentation)
+                    // We subtract the result by one so that we can get -1 values
+                    // (see comareTo documentation)
                     return Random().nextInt(2) - 1;
                   default:
                     throw UnimplementedError(
@@ -333,57 +336,60 @@ class _MusicScreenTabViewState extends State<MusicScreenTabView>
 
           return Scrollbar(
               child: box.get("FinampSettings")!.contentViewType ==
-                  ContentViewType.list
+                      ContentViewType.list
                   ? ListView.builder(
-                keyboardDismissBehavior:
-                ScrollViewKeyboardDismissBehavior.onDrag,
-                itemCount: offlineSortedItems!.length,
-                key: UniqueKey(),
-                itemBuilder: (context, index) {
-                  devLog.log('Type: ----> 1 ${widget.tabContentType.humanReadableName}');
-                  if (widget.tabContentType == TabContentType.songs) {
-                    return SongListTile(
-                      item: offlineSortedItems![index],
-                      isSong: true,
-                    );
-                  } else {
-                    return AlbumItem(
-                      album: offlineSortedItems![index],
-                      parentType: _getParentType(),
-                    );
-                  }
-                },
-              ) : GridView.builder(
-                itemCount: offlineSortedItems!.length,
-                keyboardDismissBehavior:
-                ScrollViewKeyboardDismissBehavior.onDrag,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: MediaQuery.of(context).size.width >
-                      MediaQuery.of(context).size.height
-                      ? box
-                      .get("FinampSettings")!
-                      .contentGridViewCrossAxisCountLandscape
-                      : box
-                      .get("FinampSettings")!
-                      .contentGridViewCrossAxisCountPortrait,
-                ),
-                itemBuilder: (context, index) {
-                  print('Type: ----> 2 ${widget.tabContentType.humanReadableName}');
-                  if (widget.tabContentType == TabContentType.songs) {
-                    return SongListTile(
-                      item: offlineSortedItems![index],
-                      isSong: true,
-                    );
-                  } else {
-                    return AlbumItem(
-                      album: offlineSortedItems![index],
-                      parentType: _getParentType(),
-                      isGrid: true,
-                      gridAddSettingsListener: false,
-                    );
-                  }
-                },
-              ));
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      itemCount: offlineSortedItems!.length,
+                      key: UniqueKey(),
+                      itemBuilder: (context, index) {
+                        devLog.log(
+                            'Tab Content Type: ----> 1 ${widget.tabContentType.humanReadableName}');
+                        if (widget.tabContentType == TabContentType.songs) {
+                          return SongListTile(
+                            item: offlineSortedItems![index],
+                            isSong: true,
+                          );
+                        } else {
+                          return AlbumItem(
+                            album: offlineSortedItems![index],
+                            parentType: _getParentType(),
+                          );
+                        }
+                      },
+                    )
+                  : GridView.builder(
+                      itemCount: offlineSortedItems!.length,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).size.width >
+                                MediaQuery.of(context).size.height
+                            ? box
+                                .get("FinampSettings")!
+                                .contentGridViewCrossAxisCountLandscape
+                            : box
+                                .get("FinampSettings")!
+                                .contentGridViewCrossAxisCountPortrait,
+                      ),
+                      itemBuilder: (context, index) {
+                        devLog.log(
+                            'Tab Content Type: ----> 2 ${widget.tabContentType.humanReadableName}');
+                        if (widget.tabContentType == TabContentType.songs) {
+                          return SongListTile(
+                            item: offlineSortedItems![index],
+                            isSong: true,
+                          );
+                        } else {
+                          return AlbumItem(
+                            album: offlineSortedItems![index],
+                            parentType: _getParentType(),
+                            isGrid: true,
+                            gridAddSettingsListener: false,
+                          );
+                        }
+                      },
+                    ));
         } else {
           // If the searchTerm argument is different to lastSearch, the user has changed their search input.
           // This makes albumViewFuture search again so that results with the search are shown.
@@ -408,91 +414,97 @@ class _MusicScreenTabViewState extends State<MusicScreenTabView>
             onRefresh: () => Future.sync(() => _pagingController.refresh()),
             child: Scrollbar(
               child: box.get("FinampSettings")!.contentViewType ==
-                  ContentViewType.list
+                      ContentViewType.list
                   ? PagedListView<int, BaseItemDto>(
-                pagingController: _pagingController,
-                keyboardDismissBehavior:
-                ScrollViewKeyboardDismissBehavior.onDrag,
-                builderDelegate: PagedChildBuilderDelegate<BaseItemDto>(
-                  itemBuilder: (context, item, index) {
-                    devLog.log('Type: ----> 3 ${widget.tabContentType.humanReadableName}');
-                    if (widget.tabContentType == TabContentType.songs) {
-                      return SongListTile(
-                        children: _pagingController.itemList??[],
-                        index: index,
-                        item: (_pagingController.itemList != null && _pagingController.itemList!.isNotEmpty) ?
-                        _pagingController.itemList![index] : item,
-                        isSong: true,
-                      );
-                    } else if (widget.tabContentType == TabContentType.artists) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: AlbumItem(
-                          album: item,
-                          parentType: _getParentType(),
-                        ),
-                      );
-                    }
-                    // TODO: 9
-                    // else if (widget.tabContentType == TabContentType.genres) {
-                    //   return Padding(
-                    //     padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    //     child: AlbumItem(
-                    //       album: item,
-                    //       parentType: _getParentType(),
-                    //     ),
-                    //   );
-                    // }
-                    else {
-                      return AlbumItem(
-                        album: item,
-                        parentType: _getParentType(),
-                      );
-                    }
-                  },
-                  firstPageProgressIndicatorBuilder: (_) =>
-                  const FirstPageProgressIndicator(),
-                  newPageProgressIndicatorBuilder: (_) =>
-                  const NewPageProgressIndicator(),
-                ),
-              )
+                      pagingController: _pagingController,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      builderDelegate: PagedChildBuilderDelegate<BaseItemDto>(
+                        itemBuilder: (context, item, index) {
+                          devLog.log(
+                              'Tab Content Type: ----> 3 ${widget.tabContentType.humanReadableName}');
+                          if (widget.tabContentType == TabContentType.songs) {
+                            return SongListTile(
+                              children: _pagingController.itemList ?? [],
+                              index: index,
+                              item: (_pagingController.itemList != null &&
+                                      _pagingController.itemList!.isNotEmpty)
+                                  ? _pagingController.itemList![index]
+                                  : item,
+                              isSong: true,
+                            );
+                          } else if (widget.tabContentType ==
+                              TabContentType.artists) {
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8.0),
+                              child: AlbumItem(
+                                album: item,
+                                parentType: _getParentType(),
+                              ),
+                            );
+                          }
+                          // TODO: 9
+                          // else if (widget.tabContentType == TabContentType.genres) {
+                          //   return Padding(
+                          //     padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          //     child: AlbumItem(
+                          //       album: item,
+                          //       parentType: _getParentType(),
+                          //     ),
+                          //   );
+                          // }
+                          else {
+                            return AlbumItem(
+                              album: item,
+                              parentType: _getParentType(),
+                            );
+                          }
+                        },
+                        firstPageProgressIndicatorBuilder: (_) =>
+                            const FirstPageProgressIndicator(),
+                        newPageProgressIndicatorBuilder: (_) =>
+                            const NewPageProgressIndicator(),
+                      ),
+                    )
                   : PagedGridView(
-                pagingController: _pagingController,
-                keyboardDismissBehavior:
-                ScrollViewKeyboardDismissBehavior.onDrag,
-                builderDelegate: PagedChildBuilderDelegate<BaseItemDto>(
-                  itemBuilder: (context, item, index) {
-                    devLog.log('Type: ----> 4 ${widget.tabContentType.humanReadableName}');
-                    if (widget.tabContentType == TabContentType.songs) {
-                      return SongListTile(
-                        item: item,
-                        isSong: true,
-                      );
-                    } else {
-                      return AlbumItem(
-                        album: item,
-                        parentType: _getParentType(),
-                        isGrid: true,
-                        gridAddSettingsListener: false,
-                      );
-                    }
-                  },
-                  firstPageProgressIndicatorBuilder: (_) =>
-                  const FirstPageProgressIndicator(),
-                  newPageProgressIndicatorBuilder: (_) =>
-                  const NewPageProgressIndicator(),
-                ),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: MediaQuery.of(context).size.width >
-                      MediaQuery.of(context).size.height
-                      ? box
-                      .get("FinampSettings")!
-                      .contentGridViewCrossAxisCountLandscape
-                      : box
-                      .get("FinampSettings")!
-                      .contentGridViewCrossAxisCountPortrait,
-                ),
-              ),
+                      pagingController: _pagingController,
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      builderDelegate: PagedChildBuilderDelegate<BaseItemDto>(
+                        itemBuilder: (context, item, index) {
+                          devLog.log(
+                              'Tab Content Type: ----> 4 ${widget.tabContentType.humanReadableName}');
+                          if (widget.tabContentType == TabContentType.songs) {
+                            return SongListTile(
+                              item: item,
+                              isSong: true,
+                            );
+                          } else {
+                            return AlbumItem(
+                              album: item,
+                              parentType: _getParentType(),
+                              isGrid: true,
+                              gridAddSettingsListener: false,
+                            );
+                          }
+                        },
+                        firstPageProgressIndicatorBuilder: (_) =>
+                            const FirstPageProgressIndicator(),
+                        newPageProgressIndicatorBuilder: (_) =>
+                            const NewPageProgressIndicator(),
+                      ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).size.width >
+                                MediaQuery.of(context).size.height
+                            ? box
+                                .get("FinampSettings")!
+                                .contentGridViewCrossAxisCountLandscape
+                            : box
+                                .get("FinampSettings")!
+                                .contentGridViewCrossAxisCountPortrait,
+                      ),
+                    ),
             ),
           );
         }
@@ -521,8 +533,8 @@ String _includeItemTypes(TabContentType tabContentType) {
 
 bool _offlineSearch(
     {required BaseItemDto item,
-      required String searchTerm,
-      required TabContentType tabContentType}) {
+    required String searchTerm,
+    required TabContentType tabContentType}) {
   late bool containsName;
 
   // This horrible thing is for null safety
