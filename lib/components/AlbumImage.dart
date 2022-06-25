@@ -25,16 +25,13 @@ class AlbumImage extends StatelessWidget {
       // If Flutter encounters an error, such as a 404, when getting an image, it will throw an exception.
       // This is super annoying while debugging since every blank album stops the whole app.
       // Because of this, I don't load images while the app is in debug mode.
-
       return AspectRatio(
         aspectRatio: 1,
         child: ClipRRect(
           borderRadius: borderRadius,
           child: Container(
             color: Theme.of(context).cardColor,
-            child: Image.asset(
-              'assets/images/logo.png',
-            ),
+            child: Image.asset('assets/images/logo.png'),
             // child: const Placeholder(),
           ),
         ),
@@ -62,20 +59,25 @@ class AlbumImage extends StatelessWidget {
               maxHeight: physicalHeight,
             );
 
-            return CachedNetworkImage(
-              imageUrl: imageUrl.toString(),
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                color: Theme.of(context).cardColor,
-                child: Image.asset(
-                  'assets/images/logo.png',
+            if (imageUrl != null) {
+              return CachedNetworkImage(
+                imageUrl: imageUrl.toString(),
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Theme.of(context).cardColor,
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                  ),
                 ),
-              ),
-              errorWidget: (_, __, ___) => const _AlbumImageErrorPlaceholder(),
-              // errorWidget: (_, __, ___) => Image.asset(
-              //   'assets/images/logo.png',
-              // ),
-            );
+                errorWidget: (_, __, ___) =>
+                    const _AlbumImageErrorPlaceholder(),
+                // errorWidget: (_, __, ___) => Image.asset(
+                //   'assets/images/logo.png',
+                // ),
+              );
+            } else {
+              return Image.asset('assets/images/logo.png');
+            }
           }),
         ),
       );
